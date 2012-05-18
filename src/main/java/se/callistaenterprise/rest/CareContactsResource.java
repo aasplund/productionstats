@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -19,6 +20,7 @@ import javax.ws.rs.core.Response;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapreduce.MapReduceOptions;
 import org.springframework.data.mongodb.core.mapreduce.MapReduceResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -61,24 +63,33 @@ public class CareContactsResource extends AbstractRestResource {
     @Produces({ "application/json;charset=UTF-8;qs=3.5", "application/xml;charset=UTF-8;qs=2.5" })
     public Count sum(@PathParam("year") String year, @PathParam("month") String month) {
         Criteria c = Criteria.where("year").is(year).and("month").is(month);
-        Query q = prepareQuery().addCriteria(c);
+        Query q = prepareQuery().addCriteria(c).limit(0);
         
-        MapReduceResults<CareContact> result = mongoTemplate.mapReduce(q, "careContact",
+        @SuppressWarnings("rawtypes")
+        MapReduceResults<Map> results = mongoTemplate.mapReduce(q, "careContact",
                 
                 "function() {" +
-                  "emit('numberOfContacts', {age: 1});" +
+                  "emit('numberOfContacts', {count: this.numberOfContacts});" +
                 "}",
                 
                 "function(key, values) {" +
-
-                  "return values[i];" + 
+                "var result = {count: 0};" +
+                "values.forEach(function(value) {" +
+                "   result.count += value.count;" +
+                "});" +
+                  "return result;" + 
                 "}",
                 
-                CareContact.class);
+                Map.class);
+
+        Count count = null;
+        for (@SuppressWarnings("rawtypes") Map map : results) {
+            @SuppressWarnings("rawtypes")
+            Double numberOfContacts = (Double)((Map)map.get("value")).get("count");
+            count = new Count(numberOfContacts.longValue());
+        }
         
-        System.out.println(result.getRawResults());
-//        Count count = new Count(mongoTemplate.count(q, CareContact.class));
-        return null;
+        return count;
     }
 
     @GET
