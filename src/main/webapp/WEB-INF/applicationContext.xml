@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util"
+  xmlns:security="http://www.springframework.org/schema/security"
+  xsi:schemaLocation="http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd
+    http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+
+  <import resource="classpath*:spring/mongo-setup.xml" />
+
+  <context:property-placeholder
+    location="classpath:default-config.properties, file:${user.home}/.psi-productionstats/config.properties, ${PSI_PRODUCTIONSTATS}"
+    ignore-resource-not-found="true" ignore-unresolvable="true" />
+
+  <context:annotation-config />
+
+  <!-- HTTP basic authentication in Spring Security -->
+  <security:http>
+    <security:intercept-url pattern="/*" access="ROLE_ADMIN" method="POST" />
+    <security:intercept-url pattern="/*" access="ROLE_ADMIN" method="DELETE" />
+    <security:http-basic />
+  </security:http>
+
+  <security:authentication-manager>
+    <security:authentication-provider>
+      <security:user-service properties="file:${user.home}/.skl-natpatques/users.properties" />
+    </security:authentication-provider>
+  </security:authentication-manager>
+  
+  
+  <util:list id="beanProperties">
+    <value>hsaId</value>
+    <value>hsaIdUrlEncoded</value>
+    <value>company</value>
+    <value>sex</value>
+    <value>age</value>
+    <value>visit</value>
+    <value>year</value>
+    <value>month</value>
+    <value>typeOfVisit</value>
+    <value>caregiverType</value>
+    <value>numberOfContacts</value>
+    <value>wasListed</value>
+  </util:list>
+
+  <bean class="se.callistaenterprise.rest.CareContactsResource">
+    <constructor-arg ref="mongoTemplate" />
+    <property name="properties" ref="beanProperties" />
+  </bean>
+
+  <bean id="bean2CSVWriter" class="se.callistaenterprise.rest.writers.Bean2CSVWriter">
+    <constructor-arg ref="beanProperties" />
+  </bean>
+
+  <bean class="se.callistaenterprise.rest.writers.HsaObjectCollection2CSVWriter" scope="singleton">
+    <property name="cSVWriter" ref="bean2CSVWriter" />
+  </bean>
+
+  <bean class="se.callistaenterprise.rest.writers.HsaObject2CSVWriter" scope="singleton">
+    <property name="cSVWriter" ref="bean2CSVWriter" />
+  </bean>
+</beans>
