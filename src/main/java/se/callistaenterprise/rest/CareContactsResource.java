@@ -20,7 +20,6 @@ import javax.ws.rs.core.Response;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.mapreduce.MapReduceOptions;
 import org.springframework.data.mongodb.core.mapreduce.MapReduceResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -55,6 +54,35 @@ public class CareContactsResource extends AbstractRestResource {
         Query q = prepareQuery().addCriteria(c);
         List<CareContact> foundHsaObjects = mongoTemplate.find(q, CareContact.class);
         return foundHsaObjects;
+    }
+
+    @GET
+    @Path("/{hsaId}")
+    @Produces({ "application/json;charset=UTF-8;qs=3.5",
+            "application/vnd-sll.productionstats.carecontacts.v1+json;charset=UTF-8;qs=3.2",
+            "application/xml;charset=UTF-8;qs=2.5",
+            "application/vnd-sll.productionstats.carecontacts.v1+xml;charset=UTF-8;qs=2.2",
+            "application/csv;charset=UTF-8;qs=1.5",
+            "application/vnd-sll.productionstats.carecontacts.v1+csv;charset=UTF-8;qs=1.2" })
+    public Collection<CareContact> findAllByHsaId(@PathParam("hsaId") String hsaId) {
+        Criteria c = Criteria.where("hsaId").is(hsaId);
+        Query q = prepareQuery().addCriteria(c);
+        List<CareContact> foundHsaObjects = mongoTemplate.find(q, CareContact.class);
+        return foundHsaObjects;
+    }
+    
+    @GET
+    @Path("/{hsaId}/count")
+    @Produces({ "application/json;charset=UTF-8;qs=3.5",
+            "application/vnd-sll.productionstats.carecontacts.v1+json;charset=UTF-8;qs=3.2",
+            "application/xml;charset=UTF-8;qs=2.5",
+            "application/vnd-sll.productionstats.carecontacts.v1+xml;charset=UTF-8;qs=2.2",
+            "application/csv;charset=UTF-8;qs=1.5",
+            "application/vnd-sll.productionstats.carecontacts.v1+csv;charset=UTF-8;qs=1.2" })
+    public Count countAllByHsaId(@PathParam("hsaId") String hsaId) {
+        Criteria c = Criteria.where("hsaId").is(hsaId);
+        Query q = prepareQuery().addCriteria(c);
+        return new Count(mongoTemplate.count(q, CareContact.class));
     }
 
     @GET
